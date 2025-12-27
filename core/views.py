@@ -58,3 +58,33 @@ class BudgetInitView(APIView):
         
         serializer = BudgetSerializer(budget)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+# ... existing imports and BudgetInitView ...
+
+from ml.multi_modal_input import process_inputs  # Adjust path
+
+class ExpenseInputView(APIView):
+    def post(self, request):
+        user = request.user  # Assume auth
+        input_data = request.data  # e.g., {'type': 'receipt_image', 'data': 'uploaded_image_path_or_text'}
+        
+        # Process inputs
+        txs = process_inputs(input_data)
+        
+        saved_txs = []
+        for tx in txs:
+            if 'error' in tx:
+                return Response({'error': tx['error']}, status=status.HTTP_400_BAD_REQUEST)
+            transaction = Transaction(
+                user=user,
+                text=tx['text'],
+                amount=tx['amount'],
+                source=tx['source'],
+                category=tx.get('category', 'Miscellaneous'),
+                confidence=tx.get('confidence', 0.0),
+                explanation=tx.get('explanation', '')
+            )
+            transaction.save()
+            saved_txs.append(TransactionSerializer(transaction).data)
+        
+        return Response(saved_txs, status=status.HTTP_201_CREATED)

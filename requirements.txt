@@ -9,4 +9,7 @@ psycopg2-binary==2.9.9  # For PostgreSQL
 requests==2.32.3  # For APIs in investment/inflation
 transformers==4.44.2  # For chatbot (local NLP)
 django==5.0.1  # Add if not present (latest stable as of Dec 2025)
-djangorestframework==3.15.0  # For API serializers/views
+djangorestframework==3.15.0 
+# For API serializers/views
+reportlab==4.2.2  # For PDF reports
+matplotlib==3.9.2  # For charts (if not there)

@@ -1,10 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Budget
-from .serializers import BudgetSerializer
+from .models import Budget,Transaction
+from .serializers import BudgetSerializer,TransactionSerializer
 import pandas as pd  # For data handling
-
+from ml.multi_modal_input import process_inputs  # Adjust path
+from django.contrib.auth.models import User
+from ml.analytics import generate_analytics, generate_pdf_report
+from django.http import FileResponse
 # Your budget logic (copy from ml/budget_initialization.py or import)
 def initialize_budget(income, fixed_expenses_dict, savings_percentage, user_data_file='ml/data.csv'):  # Adjust path if needed
     df = pd.read_csv(user_data_file)
@@ -58,14 +61,11 @@ class BudgetInitView(APIView):
         
         serializer = BudgetSerializer(budget)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-# ... existing imports and BudgetInitView ...
-
-from ml.multi_modal_input import process_inputs  # Adjust path
-
 class ExpenseInputView(APIView):
     def post(self, request):
-        user = request.user  # Assume auth
+        user = User.objects.first()
+        if not user:
+            return Response({"error": "No users found - create one with createsuperuser"}, status=400)# Assume auth
         input_data = request.data  # e.g., {'type': 'receipt_image', 'data': 'uploaded_image_path_or_text'}
         
         # Process inputs
@@ -88,3 +88,15 @@ class ExpenseInputView(APIView):
             saved_txs.append(TransactionSerializer(transaction).data)
         
         return Response(saved_txs, status=status.HTTP_201_CREATED)
+
+class AnalyticsView(APIView):
+    def get(self, request):
+        user_id = request.user.id if request.user.is_authenticated else None
+        result = generate_analytics(user_id)
+        return Response(result)
+
+class ReportView(APIView):
+    def get(self, request):
+        analytics = generate_analytics(request.user.id if request.user.is_authenticated else None)
+        pdf_path = generate_pdf_report(analytics)
+        return FileResponse(open(pdf_path, 'rb'), as_attachment=True, filename='spending_report.pdf')

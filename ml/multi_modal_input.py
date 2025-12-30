@@ -98,7 +98,7 @@ def process_inputs(input_data):
     # Integrate with Module 3: Categorize each
     for tx in txs:
         if 'error' not in tx:
-            cat_result = categorize_expense(tx['text'])
+            cat_result = categorize_expense(tx['text'], explain=True)
             tx['category'] = cat_result['category']
             tx['confidence'] = cat_result['confidence']
             tx['explanation'] = cat_result['explanation']

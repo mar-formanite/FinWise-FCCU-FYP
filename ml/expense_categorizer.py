@@ -46,7 +46,7 @@ def _load_models():
 
     print("ML models loaded successfully from ml/")
 
-def categorize_expense(description):
+def categorize_expense(description, explain=False):
     _load_models()  # Load models only when needed
 
     # Handle empty / invalid input
@@ -74,18 +74,30 @@ def categorize_expense(description):
         prediction_encoded = _model.predict(text_vector)[0]
         category = _label_encoder.inverse_transform([prediction_encoded])[0]
 
-        # Step 3: Predict confidence
+        # Step 3: Get confidence
+        confidence = 0.0
         if hasattr(_model, "predict_proba"):
             probabilities = _model.predict_proba(text_vector)[0]
             confidence = round(max(probabilities) * 100, 2)
-        else:
-            confidence = 0.0
 
-        return {
+        result = {
             "category": category,
             "confidence": confidence,
             "explanation": "Predicted using trained ML expense categorization model"
         }
+
+        # Optional: Explainability - Get top features (words) using feature importance
+        if explain:
+            feature_names = _vectorizer.get_feature_names_out()
+            if hasattr(_model, 'feature_importances_'):
+                importances = _model.feature_importances_
+                top_indices = np.argsort(importances)[-5:]  # Top 5 features
+                top_features = [feature_names[i] for i in top_indices if importances[i] > 0]
+                result["explanation"] = f"Top contributing words: {', '.join(top_features or ['No significant features'])} (matched to {category})"
+            else:
+                result["explanation"] = "No feature importance available for this model type."
+
+        return result
     except Exception as e:
         print(f"Prediction error: {e}")
         return {
@@ -93,7 +105,6 @@ def categorize_expense(description):
             "confidence": 0.0,
             "explanation": "Model prediction failed — fallback used"
         }
-
 
 def categorize_multiple_expenses(descriptions):
     """
@@ -143,12 +154,8 @@ if __name__ == "__main__":
     ]
     
     for test in test_cases:
-        result = categorize_expense(test, return_confidence=True)
-        if isinstance(result, tuple):
-            category, confidence = result
-            print(f"'{test}' -> {category} (Confidence: {confidence:.1f}%)")
-        else:
-            print(f"'{test}' -> {result}")
+        result = categorize_expense(test, explain=True)
+        print(f"'{test}' -> {result['category']} (Confidence: {result['confidence']:.1f}%) - {result['explanation']}")
     
     print("\n" + "="*50)
     print("Testing batch prediction:")

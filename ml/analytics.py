@@ -28,16 +28,26 @@ def generate_analytics(user_id=None, user_data_file=None):
     else:
         user_row = df.iloc[0]  # Default: first row
 
-    # Spending by category
-    categories = ['Groceries', 'Transport', 'Eating_Out', 'Entertainment',
-                  'Utilities', 'Healthcare', 'Education', 'Miscellaneous']
+    # Spending by category - use only columns that exist in data.csv
+    all_possible_categories = ['Groceries', 'Transport', 'Eating_Out', 'Entertainment', 'Utilities', 
+                           'Healthcare', 'Education', 'Miscellaneous', 'Rent', 'Loan_Repayment', 
+                           'Insurance', 'Shopping', 'Travel', 'Subscriptions', 'Gym/Fitness']
+
+# Filter to only columns that exist in the CSV
+    categories = [cat for cat in all_possible_categories if cat in df.columns]
+
+# If no categories found, fallback to all numeric columns (safety)
+    if not categories:
+       categories = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
+
+    print(f"Using categories: {categories}")  # For debugging
     spending = user_row[categories].values
     total_spend = np.sum(spending)
     summary = {cat: float(val) for cat, val in zip(categories, spending)}  # Ensure float
 
     # Potential savings
-    potential_cols = [f'Potential_Savings_{cat}' for cat in categories]
-    potential_savings = user_row[potential_cols].sum()
+    potential_cols = [f'Potential_Savings_{cat}' for cat in categories if f'Potential_Savings_{cat}' in df.columns]
+    potential_savings = user_row[potential_cols].sum() if potential_cols else 0.0
 
     # Chart path — save in project root
     project_root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))

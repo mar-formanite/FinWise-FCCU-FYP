@@ -1,15 +1,14 @@
 import os
 import pandas as pd
-import numpy as np  # <-- Added this (was missing)
+import numpy as np 
 import matplotlib.pyplot as plt
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 def generate_analytics(user_id=None, user_data_file=None):
-    # Build absolute path to data.csv in project root
     if user_data_file is None:
-        current_dir = os.path.dirname(os.path.abspath(__file__))  # ml/ folder
-        project_root = os.path.abspath(os.path.join(current_dir, '..'))  # Go up to FineWise/
+        current_dir = os.path.dirname(os.path.abspath(__file__)) 
+        project_root = os.path.abspath(os.path.join(current_dir, '..'))
         user_data_file = os.path.join(project_root, 'data.csv')
     
     if not os.path.exists(user_data_file):
@@ -18,8 +17,6 @@ def generate_analytics(user_id=None, user_data_file=None):
                                 f"Expected project root: {project_root}")
 
     df = pd.read_csv(user_data_file)
-    
-    # Select user row — fallback to first row if no match
     if user_id is not None and 'user_id' in df.columns:
         matched = df[df['user_id'] == user_id]
         if len(matched) == 0:
@@ -60,7 +57,7 @@ def generate_analytics(user_id=None, user_data_file=None):
     plt.axis('equal')
     plt.tight_layout()
     plt.savefig(chart_path, dpi=200, bbox_inches='tight')
-    plt.close()  # Important: free memory
+    plt.close()  
 
     # Insights
     top_category = max(summary, key=summary.get)
@@ -72,7 +69,7 @@ def generate_analytics(user_id=None, user_data_file=None):
         'summary': summary,
         'total_spend': float(total_spend),
         'potential_savings': float(potential_savings),
-        'chart_path': 'spending_chart.png',  # Relative name for API
+        'chart_path': 'spending_chart.png',  
         'insights': insights
     }
 

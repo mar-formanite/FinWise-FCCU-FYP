@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Budget,Transaction
 from .serializers import BudgetSerializer,TransactionSerializer
-import pandas as pd  # For data handling
-from ml.multi_modal_input import process_inputs  # Adjust path
+import pandas as pd  
+from ml.multi_modal_input import process_inputs 
 from django.contrib.auth.models import User
 from ml.analytics import generate_analytics, generate_pdf_report
 from django.http import FileResponse
@@ -13,8 +13,7 @@ from ml.investment_insights import investment_insights
 from ml.chatbot import chatbot_query
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
-# Your budget logic (copy from ml/budget_initialization.py or import)
-def initialize_budget(income, fixed_expenses_dict, savings_percentage, user_data_file='ml/data.csv'):  # Adjust path if needed
+def initialize_budget(income, fixed_expenses_dict, savings_percentage, user_data_file='ml/data.csv'): 
     df = pd.read_csv(user_data_file)
     avg_allocations = df[['Groceries', 'Transport', 'Eating_Out', 'Entertainment', 'Utilities', 'Healthcare', 'Education', 'Miscellaneous']].mean().to_dict()
     total_avg = sum(avg_allocations.values())
@@ -75,7 +74,6 @@ class ExpenseInputView(APIView):
             return Response({"error": "No users found - create one with createsuperuser"}, status=400)# Assume auth
         input_data = request.data  # e.g., {'type': 'receipt_image', 'data': 'uploaded_image_path_or_text'}
         
-        # Process inputs
         txs = process_inputs(input_data)
         
         saved_txs = []
@@ -87,7 +85,7 @@ class ExpenseInputView(APIView):
                 text=tx['text'],
                 amount=tx['amount'],
                 source=tx['source'],
-                category=tx.get('category', 'Miscellaneous'),
+                category=tx.get('category_obj'),
                 confidence=tx.get('confidence', 0.0),
                 explanation=tx.get('explanation', '')
             )
@@ -129,38 +127,3 @@ class ChatbotView(APIView):
         user_id = request.user.id if request.user.is_authenticated else None
         response = chatbot_query(query, user_id)
         return Response({"response": response})
-
-def login_view(request):
-    if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return redirect('dashboard')
-        else:
-            return render(request, 'login.html', {'error': 'Invalid credentials'})
-    return render(request, 'login.html')
-
-def face_login_simulate(request):
-    # Simulate face login — auto-login first user
-    user = User.objects.first()
-    login(request, user)
-    return redirect('dashboard')
-
-from django.contrib.auth.decorators import login_required
-
-@login_required
-def dashboard(request):
-    analytics = generate_analytics(request.user.id if request.user.is_authenticated else None)
-    inflation = forecast_expenses(analytics['summary'])
-    investment = investment_insights(analytics['potential_savings'])
-    
-    context = {
-        'analytics': analytics,
-        'inflation': inflation,
-        'investment': investment['advice'],
-        'market': investment['market_data'],
-        'categories': list(analytics['summary'].keys())
-    }
-    return render(request, 'dashboard.html', context)

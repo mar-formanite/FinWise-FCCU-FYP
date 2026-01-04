@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from .models import Budget, Transaction  # Add this line (imports models)
-
+from .models import Budget, Transaction 
 class BudgetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Budget

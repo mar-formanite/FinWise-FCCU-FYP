@@ -3,10 +3,17 @@ import xml.etree.ElementTree as ET
 import cv2  # From opencv-python
 import pytesseract  # For real OCR
 from ml.expense_categorizer import categorize_expense  # Assume from your ml folder (Module 3)
-
+from core.models import Category
 # Configure Tesseract path if needed (Windows default: C:\Program Files\Tesseract-OCR\tesseract.exe)
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'  # Adjust if different
-
+def get_or_create_category(name):
+    cat, created = Category.objects.get_or_create(
+        name=name,
+        defaults={'description': f"Auto-created category for {name}"}  # Default value
+    )
+    if created:
+        print(f"Created new category: {name}")
+    return cat
 def parse_receipt_image(image_path):
     try:
         img = cv2.imread(image_path)
@@ -99,7 +106,8 @@ def process_inputs(input_data):
     for tx in txs:
         if 'error' not in tx:
             cat_result = categorize_expense(tx['text'], explain=True)
-            tx['category'] = cat_result['category']
+            category_obj = get_or_create_category(cat_result['category'])
+            tx['category_obj'] = category_obj  # Save object for DB
             tx['confidence'] = cat_result['confidence']
             tx['explanation'] = cat_result['explanation']
     

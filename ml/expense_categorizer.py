@@ -2,8 +2,6 @@ import os
 import pickle
 import pandas as pd
 import numpy as np
-
-# --- DO NOT LOAD ANYTHING AT MODULE LEVEL ---
 _model = None
 _vectorizer = None
 _label_encoder = None
@@ -13,13 +11,11 @@ def _load_models():
     global _model, _vectorizer, _label_encoder
     
     if _model is not None:
-        return  # Already loaded
+        return 
 
-    # Build absolute path to ml/ folder (robust way)
+    # Build absolute path to ml/ folder 
     current_dir = os.path.dirname(os.path.abspath(__file__))  # Directory of this file
     ml_dir = os.path.join(current_dir, 'ml') if os.path.basename(current_dir) != 'ml' else current_dir
-    # If this file is in root, ml/ is sibling; if in core/, ml/ is sibling of parent
-
     model_path = os.path.join(ml_dir, 'expense_categorizer_model.pkl')
     vectorizer_path = os.path.join(ml_dir, 'expense_vectorizer.pkl')
     label_encoder_path = os.path.join(ml_dir, 'label_encoder.pkl')
@@ -107,16 +103,7 @@ def categorize_expense(description, explain=False):
         }
 
 def categorize_multiple_expenses(descriptions):
-    """
-    Categorize multiple expenses at once (more efficient for batch processing).
-    
-    Args:
-        descriptions (list): List of transaction descriptions
-    
-    Returns:
-        list: List of category names
-    """
-    _load_models()  # Only loads when function is called
+    _load_models() 
     
     if not descriptions:
         return []
@@ -147,8 +134,8 @@ if __name__ == "__main__":
         "Uber trip",
         "Medicine store",
         "KFC order",
-        "",  # Empty string test
-        None,  # None test
+        "",  
+        None,  
         "IESCO BILL PAYMENT",
         "school fees"
     ]
